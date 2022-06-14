@@ -2,18 +2,20 @@
 const express = require('express');
 // base de données mongoDB
 const mongoose = require('mongoose');
+// path de notre serveur
 const path = require('path');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+
 require('dotenv').config();
 
 const userRoutes = require('./routes/user'); 
 const sauceRoutes = require('./routes/sauce');
 
 // connexion a la base de données mongoDB
-mongoose.connect(process.env.MONGO_DB, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_DB_2, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie'))
-  .catch(() => console.log('Connexion à MongoDB échouée'));
+  .catch((error) => console.log({ error }));
 
 // lancement de express
 const app = express();

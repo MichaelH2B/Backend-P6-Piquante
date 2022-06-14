@@ -1,11 +1,11 @@
 // on importe le model schema
 const Sauce = require('../models/sauce'); 
-
 const fs = require('fs');
-const sauce = require('../models/sauce');
+const jwt = require('jsonwebtoken'); 
+require('dotenv').config();
 
 // creer un produit dans ma base de donnée
-exports.createSauce = (req, res, next) => {
+exports.createSauce = (req, res) => {
     console.log(req.body);
     console.log(req.body.sauce);
     const sauceObject = JSON.parse(req.body.sauce);
@@ -24,7 +24,7 @@ exports.createSauce = (req, res, next) => {
 };
 
 // recupere les sauces de la base de données et nous renvoie les sauces (affichage de toute les sauces)
-exports.getAllSauces = (req, res, next) => {
+exports.getAllSauces = (req, res) => {
     Sauce.find()
     .then(sauces => res.status(200).json(sauces))
     .catch(error => res.status(400).json({ error }));
@@ -58,7 +58,8 @@ exports.modifySauce = (req, res, next) => {
             .catch(error => res.status(500).json({ error }));
     } else {
         // si l'image n'est pas modifiée
-        const sauceObject = { ...req.body.sauce };
+        const sauceObject = { ...req.body };
+        console.log(sauceObject);
         Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
             .then(() => res.status(200).json({ message: 'Sauce modifiée!' }))
             .catch(error => res.status(400).json({ error }));
@@ -66,7 +67,7 @@ exports.modifySauce = (req, res, next) => {
 };
 
 // supprimer un sauce
-exports.deleteSauce = (req, res, next) => {
+exports.deleteSauce = (req, res) => {
     Sauce.findOne({ _id: req.params.id })
       .then(sauce => {
         const filename = sauce.imageUrl.split('/images/')[1];
@@ -80,16 +81,68 @@ exports.deleteSauce = (req, res, next) => {
 };
 
 // like & dislike une sauce
-exports.likeSauce = (req, res, next) => {
+// exports.likeSauce = (req, res) => {
+//     const like = req.body.like
+//     const userId = req.body.userId;
+//     const sauceId = req.params.id;
+//     console.log(like);
+//     Sauce.findOne({ _id: sauceId })
+//         .then((sauce) => {
+//             switch (like) {
+//                 case 1 :
+//                     if (!sauce.usersLiked.includes(userId)) {
+//                         Sauce.updateOne({ _id: sauceId },
+//                             {   $inc: { likes: 1 },
+//                                 $push: { usersLiked: userId }})
+//                             .then(() => res.status(201).json({ message: '1'}))
+//                             .catch((error) => res.status(404).json({ message: "error" }));
+//                     } break;
+
+//                 case 0 :
+//                     if (sauce.usersLiked.includes(userId)) {
+//                         Sauce.updateOne({ _id: sauceId },
+//                             {   $inc: { likes: -1 },
+//                                 $pull: { usersLiked: userId }})
+//                             .then(() => res.status(201).json({ message: '0'}))
+//                             .catch((error) => res.status(404).json({ message: "error" }));
+//                     } 
+
+//                     if (sauce.usersDisliked.includes(userId)) {
+//                         Sauce.updateOne({ _id: sauceId },
+//                             {   $inc: { dislikes: -1 },
+//                                 $pull: { usersDisliked: userId }})
+//                             .then(() => res.status(201).json({ message: '0'}))
+//                             .catch((error) => res.status(404).json({ message: "error" }));
+//                     } break;
+                
+//                 case -1 :
+//                     if (!sauce.usersLiked.includes(userId) && like === -1) {
+//                         Sauce.updateOne({ _id: sauceId },
+//                             {   $inc: { dislikes: 1 },
+//                                 $push: { usersDisliked: userId }})
+//                             .then(() => res.status(201).json({ message: '-1'}))
+//                             .catch((error) => res.status(404).json({ message: "error" }));
+//                     } break;
+//             }
+//         })
+//         .catch((error) => res.status(404).json({ error }));
+// };
+
+exports.likeSauce = (req, res) => {
+
     const like = req.body.like
-    const userId = req.body.userId;
     const sauceId = req.params.id;
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
+    const userId = decodedToken.userId;
+
     console.log(like);
     Sauce.findOne({ _id: sauceId })
         .then((sauce) => {
             switch (like) {
                 case 1 :
-                    if (!sauce.usersLiked.includes(userId) && like === 1) {
+                    if (!sauce.usersLiked.includes(userId)) {
                         Sauce.updateOne({ _id: sauceId },
                             {   $inc: { likes: 1 },
                                 $push: { usersLiked: userId }})
